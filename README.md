@@ -4,6 +4,37 @@ This repo is everything you need to run a server for [The Spaghetti Detective](h
 
 The core of this project is based on a Deep Learning model. [See how the model works on real data](https://app.thespaghettidetective.com/publictimelapses/).
 
+## dalgibbard: Building Docker Images for Unraid
+
+### Image building
+
+```bash
+# Ensure wherever you have the source code checked out, you pull the latest master (as mounted by the application under /app)
+gh repo clone dalgibbard/TheSpaghettiDetective
+
+# Build + Push the ML API images
+docker build -t dalgibbard/tsd_mlapi:latest ml_api/
+docker push dalgibbard/tsd_mlapi:latest
+
+# Build + Push the Web Base and Main images
+docker build -f web/Dockerfile.base -t dalgibbard/tsd_base:latest web/
+docker push dalgibbard/tsd_base:latest
+docker build -f web/Dockerfile -t dalgibbard/tsd_web:latest web/
+docker push dalgibbard/tsd_web:latest
+```
+
+### Running in Unraid
+
+#### Redis
+
+#### tsd_mlapi
+
+#### tsd_web
+
+#### tsd_tasks
+
+#### Auto-start + Ordering
+
 # Install and run the server
 
 If you are on Windows 10 and prefer a video tutorial, head to LukesLaboratory's [awesome video](https://www.youtube.com/watch?v=8l4C_K9S2-Y) (Big shout-out to [@LukesLaboratory](https://twitter.com/LukesLaboratory/)).
