@@ -102,12 +102,17 @@ def send_print_progress(_print, op_data, existed_rotated_jpg_url):
         progress = op_data.get('progress')
         if progress:
             completion = progress.get('completion')
-            data['completion'] = str(round(completion or 0))
+            data['completion'] = str(
+                max(0, min(100, int(round(completion or 0)))))
             data['title'] += f' {data["completion"] if completion else "-"}%'
             seconds_left = progress.get("printTimeLeft") or 0
-            data['title'] += f' | ⏱{shortform_duration(seconds_left)}'
-            if mobile_device.preferred_timezone:
-                data['title'] += f' | 🏁{shortform_localtime(seconds_left, mobile_device.preferred_timezone)}'
+            if (
+                isinstance(seconds_left, int) or
+                isinstance(seconds_left, float)
+            ):
+                data['title'] += f' | ⏱{shortform_duration(seconds_left)}'
+                if mobile_device.preferred_timezone:
+                    data['title'] += f' | 🏁{shortform_localtime(seconds_left, mobile_device.preferred_timezone)}'
 
         printer = _print.printer
         if printer.not_watching_reason():

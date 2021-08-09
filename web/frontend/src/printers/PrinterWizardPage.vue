@@ -7,11 +7,9 @@
   <div class="col-sm-12 col-lg-10 wizard-container form-container" :class="{'logo-bg': verifiedPrinter }">
 
     <div v-if="verifiedPrinter" class="text-center py-5">
-      <svg class="success-checkmark" viewBox="0 0 446 410" xmlns="http://www.w3.org/2000/svg">
-        <path d="M173.26 409.06C77.84 409.06 0.200012 331.43 0.200012 236C0.200012 140.57 77.84 62.94 173.26 62.94C268.68 62.94 346.32 140.57 346.32 236C346.32 331.43 268.69 409.06 173.26 409.06ZM173.26 86.06C90.59 86.06 23.33 153.32 23.33 235.99C23.33 318.66 90.59 385.92 173.26 385.92C255.93 385.92 323.19 318.67 323.19 236C323.19 153.33 255.93 86.07 173.26 86.07V86.06Z" />
-        <path d="M173.26 293.77L95.82 216.34L117.04 195.12L173.26 251.35L424 0.600006L445.22 21.81L173.26 293.77Z" />
+      <svg class="success-checkmark" fill="currentColor" viewBox="0 0 446 410">
+        <use href="#svg-success-checkmark" />
       </svg>
-
       <h3 class="pb-4">Successfully linked to your account!</h3>
       <div class="col-sm-12 col-md-8 offset-md-2 col-lg-6 offset-lg-3 d-flex flex-column align-center justify-content-center">
         <saving-animation :errors="errorMessages.printer_name" :saving="saving.printer_name">
@@ -57,13 +55,12 @@
         color="rgb(var(--color-primary))"
         step-size="sm"
       >
-        <h2 slot="title">
-          <svg class="header-img"  viewBox="0 0 165 152" xmlns="http://www.w3.org/2000/svg">
-            <path class="tone-1" d="M162.703 74.7397C162.703 74.6597 162.643 74.5297 162.573 74.3397C161.403 70.4597 153.253 43.7297 132.123 32.7997C110.123 21.4397 81.0226 16.9397 53.2126 46.3497C17.3626 84.2697 57.8826 125.68 61.1726 151.06H16.1726C-4.90742 111.25 -2.72743 75.1097 7.69257 50.4797C20.1726 21.0897 62.1726 -8.60031 105.753 2.30969C180.713 21.0697 162.703 74.7397 162.703 74.7397Z" />
-            <path class="tone-2" d="M163 72.8212C162.526 71.6245 161.887 69.9878 161.29 68.8218C160.945 67.9524 160.552 67.1022 160.115 66.2748C160.115 66.2748 159.796 65.436 159.785 65.4258C156.88 60.608 154.871 56.5165 150.275 52.6705C146.377 49.3988 142.103 46.597 137.541 44.3238C136.974 44.0374 136.407 43.7509 135.841 43.5055C119.17 35.6804 98.5736 34.2279 80.9447 43.7816C59.926 55.1868 61.8527 72.4223 68.7456 86.3028V86.3846C70.6573 90.1567 72.9056 93.7511 75.4633 97.1249C75.4633 97.1249 75.4633 97.1249 75.4633 97.1249C77.1521 99.3968 78.9648 101.575 80.8932 103.651C88.3321 111.609 95.1529 125.622 99.8306 136.68C102.468 142.929 104.426 148.248 105.384 151H59.823C59.8326 150.963 59.8326 150.924 59.823 150.887C58.5144 125.847 14.9522 83.674 51.704 45.0807C79.5228 15.9081 108.599 20.3679 130.565 31.6298C151.625 42.4519 161.475 68.4535 162.887 72.4121C162.938 72.6064 162.969 72.7599 163 72.8212Z" />
+        <h3 slot="title">
+          <svg class="header-img"  viewBox="0 0 165 152">
+            <use href="#svg-octoprint-logo" />
           </svg>
           {{title}}
-        </h2>
+        </h3>
         <tab-content v-if="printerIdToLink" title="Open Plugin Settings">
           <div class="container">
             <div class="row justify-content-center pb-3">
@@ -107,7 +104,45 @@
             </div>
           </div>
         </tab-content>
-        <tab-content title="Plugin Wizard">
+        <tab-content v-if="autoDiscovering" title="Link It!">
+          <loading :active="autoLinking"
+            :can-cancel="true"
+            :on-cancel="cancelAutoLinking"
+            >
+          </loading>
+          <div class="discover">
+            <div class="discover-body">
+              <div v-if="discoveredPrinters.length === 0" style="text-align: center;">
+                <div class="spinner-border big" role="status">
+                  <span class="sr-only"></span>
+                </div>
+                <div class="lead">
+                Scanning...
+                </div>
+              </div>
+              <div v-else>
+                <div class="lead my-3">
+                  <div class="spinner-border" role="status">
+                  <span class="sr-only"></span>
+                </div><span class="sr-only"></span>Scanning..., {{discoveredPrinters.length}} OctoPrint(s) found on your local network:</div>
+                <discovered-printer v-for="discoveredPrinter in discoveredPrinters" :key="discoveredPrinter.device_id" :discoveredPrinter="discoveredPrinter" @auto-link-printer="autoLinkPrinter" />
+              </div>
+              <div class="mt-5 mb-3">
+                Can't find the OctoPrint you want to link?
+                Switch to <a class="link" @click="autoDiscovering=false">Manual Setup</a> instead.
+              </div>
+              <div v-if="discoveryCount>=2" class="text-muted">
+                <div>To link your OctoPrint, please make sure:</div>
+                <ul>
+                  <li>The Raspberry Pi is powered on.</li>
+                  <li>The Raspberry Pi is connected to the same local network as your phone/computer.</li>
+                  <li>The Spaghetti Detective plugin version is 1.7 or above.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </tab-content>
+        <tab-content v-else title="Plugin Wizard" >
           <div class="container">
             <div class="row justify-content-center pb-3">
               <div class="col-sm-12 col-lg-8">
@@ -128,7 +163,7 @@
             </div>
           </div>
         </tab-content>
-        <tab-content title="Enter Code">
+        <tab-content v-if="!autoDiscovering" title="Enter Code">
           <div class="container">
             <div class="row justify-content-center pb-3">
               <div class="col-sm-12 col-lg-8  d-flex flex-column align-items-center">
@@ -152,10 +187,10 @@
 
         <template slot="footer" slot-scope="props">
           <div class="wizard-footer-left">
-            <wizard-button v-if="props.activeTabIndex > 0" @click.native="props.prevTab(); prevTab();" class="btn btn-link btn-back">&lt; Back</wizard-button>
+            <wizard-button v-if="props.activeTabIndex > 0" @click.native="props.prevTab(); prevTab(props.activeTabIndex);" class="btn btn-link btn-back">&lt; Back</wizard-button>
           </div>
           <div class="wizard-footer-right">
-            <wizard-button v-if="!props.isLastStep" @click.native="props.nextTab(); nextTab();" class="wizard-footer-right wizard-btn" :style="props.fillButtonStyle">Next &gt;</wizard-button>
+            <wizard-button v-if="!props.isLastStep" @click.native="props.nextTab(); nextTab(props.activeTabIndex);" class="wizard-footer-right wizard-btn" :style="props.fillButtonStyle">Next &gt;</wizard-button>
           </div>
         </template>
       </form-wizard>
@@ -173,19 +208,29 @@ import moment from 'moment'
 import urls from '@lib/server_urls'
 import {WizardButton, FormWizard, TabContent} from 'vue-form-wizard'
 import 'vue-form-wizard/dist/vue-form-wizard.min.css'
+// TODO: this should be configured as global. But for some reason it doesn't work.
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.css'
+
+import sortBy from 'lodash/sortBy'
 import theme from '../main/main.sass'
 import PullToReveal from '@common/PullToReveal.vue'
 import Navbar from '@common/Navbar.vue'
 import SavingAnimation from '../common/SavingAnimation.vue'
+import DiscoveredPrinter from './DiscoveredPrinter.vue'
+
+const MAX_DISCOVERY_CALLS = 720 // Scaning for up to 1 hour
 
 export default {
   components: {
     FormWizard,
     TabContent,
     WizardButton,
+    Loading,
     PullToReveal,
     Navbar,
     SavingAnimation,
+    DiscoveredPrinter,
   },
   data() {
     return {
@@ -201,8 +246,21 @@ export default {
           'delay': 1000,
           'timeoutId': null
         },
-      }
+      },
+      autoDiscovering: true,
+      discoveryCount: 0,
+      discoveredPrinters: [],
+      autoLinking: false,
+      apiCallIntervalId: null,
     }
+  },
+
+  created() {
+    if (this.printerIdToLink) { // Re-link currently doesn't support auto-discovery on the plugin side
+      this.autoDiscovering = false
+    }
+    this.discoverPrinter()
+    this.getVerificationCode()
   },
 
   computed: {
@@ -228,7 +286,7 @@ export default {
       } else {
         return '-'
       }
-    }
+    },
   },
   methods: {
     setSavingStatus(propName, status) {
@@ -277,22 +335,13 @@ export default {
      */
     prevTab() {
       document.querySelector('.wizard-nav.wizard-nav-pills li.active .wizard-icon-circle').classList.remove('checked')
-      this.onVerificationStep = document.querySelector('.wizard-nav.wizard-nav-pills li.active .wizard-icon-circle').id === 'step-PluginWizard1'
+      this.onVerificationStep = false
     },
-    nextTab() {
+    nextTab(activeStep) {
       document.querySelector('.wizard-nav.wizard-nav-pills li.active .wizard-icon-circle').classList.add('checked')
-
-      this.onVerificationStep = document.querySelector('.wizard-nav.wizard-nav-pills li.active .wizard-icon-circle').id === 'step-PluginWizard1'
+      this.onVerificationStep = activeStep == 1 // nextTab is called before activeStep changes
 
       if (this.onVerificationStep) {
-        if (!this.codeInterval) {
-          this.getVerificationCode()
-
-          this.codeInterval = setInterval(() => {
-            this.getVerificationCode()
-          }, 5000)
-        }
-
         const copyFunc = this.copyCode
 
         let ctrlDown = false, ctrlKey = 17, cmdKey = 91, cKey = 67
@@ -336,7 +385,7 @@ export default {
      * Copy verification code to clipboard (on appropriate step)
      */
     copyCode() {
-      if (this.onVerificationStep) {
+      if (this.onVerificationStep && this.verificationCode) {
         let textArea = document.createElement('textarea')
         textArea.value = this.verificationCode.code
 
@@ -360,23 +409,28 @@ export default {
       }
     },
 
-    /**
-     * Get verification code from API
-     */
-    getVerificationCode() {
+    callVerificationCodeApi() {
       axios
         .get(this.verificationCodeUrl())
         .then((resp) => {
           if (resp.data) {
-            if (resp.data) {
-              this.verificationCode = resp.data
-              if (this.verificationCode.verified_at) {
-                this.verifiedPrinter = resp.data.printer
-                clearInterval(this.codeInterval)
-              }
+            this.verificationCode = resp.data
+            if (this.verificationCode.verified_at) {
+              this.verifiedPrinter = resp.data.printer
             }
           }
         })
+    },
+
+    getVerificationCode() {
+      this.callVerificationCodeApi()
+      this.apiCallIntervalId = setInterval(() => {
+        if (this.verifiedPrinter) {
+          clearInterval(this.apiCallIntervalId)
+        } else {
+          this.callVerificationCodeApi()
+        }
+      }, 5000)
     },
 
     showVerificationCodeHelpModal() {
@@ -397,6 +451,52 @@ export default {
     zoomIn(event) {
       event.target.classList.toggle('zoomedIn')
     },
+
+    callPrinterDiscoveryApi() {
+      if (!this.autoDiscovering) {
+        return
+      }
+      if (this.discoveryCount >= MAX_DISCOVERY_CALLS && this.discoveredPrinters.length === 0) {
+        this.autoDiscovering = false
+        this.$swal.Toast.fire({
+          title: 'No OctoPrint discovered on your local network. Switched to manual linking.',
+        })
+      }
+
+      this.discoveryCount += 1
+      axios
+        .get(urls.printerDiscovery())
+        .then((resp) => {
+          this.discoveredPrinters = sortBy(resp.data, (p) => p.device_id)
+        })
+    },
+
+    discoverPrinter() {
+      this.callPrinterDiscoveryApi()
+      setTimeout(() => {
+        this.discoverPrinter()
+      }, 5000)
+    },
+
+    autoLinkPrinter(deviceId) {
+      axios.post(urls.printerDiscovery(), { code: this.verificationCode.code, device_id: deviceId })
+      this.autoLinking = true
+      // Declare failure if nothing is linked after 20s
+      setTimeout(() => {
+        if (this.autoLinking && !this.verifiedPrinter) {
+          this.$swal.Toast.fire({
+            icon: 'error',
+            title: 'Something went wrong. Switched to using 6-digit code to link OctoPrint.',
+          })
+          this.autoDiscovering = false
+        }
+        this.autoLinking = false
+      }, 20000)
+    },
+
+    cancelAutoLinking() {
+      this.autoLinking = false
+    }
   }
 }
 </script>
@@ -409,7 +509,7 @@ export default {
 
 .wizard-container
   padding: 1em
-  background: rgb(var(--color-body-bg))
+  background: rgb(var(--color-surface-secondary))
   -webkit-box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.3) !important
   box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.3) !important
   border: none !important
@@ -421,7 +521,7 @@ export default {
     background-size: 500px
 
 .btn-back
-  color: rgb(var(--color-white))
+  color: rgb(var(--color-text-primary))
   min-width: auto
 
 .container
@@ -433,14 +533,8 @@ export default {
   margin-right: 12px
   margin-bottom: 8px
 
-  .tone-1
-    fill: rgb(var(--color-icon-tunneling-tone-1))
-    
-  .tone-2
-    fill: rgb(var(--color-icon-tunneling-tone-2))
-
 .img-container
-  background: rgb(var(--color-body-bg-d-5))
+  background: rgb(var(--color-surface-secondary) / .6)
   padding: 1rem
   text-align: center
 
@@ -455,8 +549,8 @@ img
   text-align: center
   width: 21rem
   height: 60px
-  background-color: rgb(var(--color-body-bg-d-10))
-  color: rgb(var(--color-text))
+  background-color: rgb(var(--color-input-background))
+  color: rgb(var(--color-text-primary))
   font-size: 2rem
   font-weight: 500
   letter-spacing: 0.5em
@@ -484,11 +578,12 @@ li
 
 <style lang="sass">
 // Unscoped styles to style plugin elements
+// TODO merge 2 style blocks
 @use "~main/theme"
 
 // Step label (not active)
 .wizard-container .vue-form-wizard .wizard-nav-pills > li:not(.active) > a > span
-  color: rgb(var(--color-white))
+  color: rgb(var(--color-text-primary))
 
 // Adjust numbers in the circles (form steps)
 .wizard-nav.wizard-nav-pills .wizard-icon-circle i
@@ -518,9 +613,6 @@ li
   height: 6rem
   margin-bottom: 1.5rem
 
-  path
-    fill: rgb(var(--color-dark-white))
-
 .printer-name-input
   position: relative
 
@@ -539,4 +631,26 @@ li
     width: 100%
     font-size: 20px
     text-align: center
+
+.discover
+  .discover-body
+    min-height: 25rem
+    display: flex
+    flex-direction: column
+    justify-content: center
+
+    .spinner-border
+      width: 1.2em
+      height: 1.2em
+      margin-right: 0.2em
+      &.big
+        width: 5rem
+        height: 5rem
+        margin-bottom: 0.8rem
+
+  .spinner-grow
+    margin: 12px 12px
+
+  li
+    margin: initial
 </style>

@@ -37,6 +37,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'whitenoise.runserver_nostatic',
     'channels',
     "channels_presence",
     'django.contrib.admin',
@@ -255,6 +256,17 @@ if os.environ.get('SENTRY_DSN'):
 
 # REDIS client
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
+
+# Django cache
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 # Email and SMS settings
 

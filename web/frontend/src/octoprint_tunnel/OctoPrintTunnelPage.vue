@@ -1,9 +1,5 @@
 <template>
   <div>
-    <pull-to-reveal>
-      <navbar view-name="app.views.tunnel_views.tunnel"></navbar>
-    </pull-to-reveal>
-
     <div v-if="!isPro" class="floating-panel text-center pb-2">
       <div class="text-muted">Month-To-Date Usage/Free Limit(<a href="https://help.thespaghettidetective.com/kb/guide/en/octoprint-tunneling-Osas3m3O3L/Steps/300026,361069,366057,300029">?</a>)</div>
       <div :class="usageClass">{{ usageMTD }}/{{ humanizedUsageCap }}</div>
@@ -20,16 +16,12 @@ import axios from 'axios'
 import split from 'lodash/split'
 import filesize from 'filesize'
 import urls from '@lib/server_urls'
-import PullToReveal from '@common/PullToReveal.vue'
-import Navbar from '@common/Navbar.vue'
 
 export default {
   name: 'OctoPrintTunnelPage',
 
-  components: {
-    PullToReveal,
-    Navbar,
-  },
+  components: {},
+
   data: function() {
     return {
       bytesMTD: null,
@@ -65,13 +57,13 @@ export default {
   },
 
   mounted() {
-    this.$swal.DismissableToast({
-        html: '<h4 class="text-center p-2"><img style="height: 1.1em;margin-right: 0.75em;" src="/static/img/octoprint-tunnel.png" />OctoPrint Secure Tunnel</h4><div class="p-1">It may take long time for OctoPrint page to load as it is securely tunneled via The Spaghetti Detective server.</div><div class="p-1"><a target="_blank" href="https://help.thespaghettidetective.com/kb/guide/en/octoprint-tunneling-Osas3m3O3L/Steps/300026,361069,300029">Learn more about OctoPrint Tunneling\'s security and page load speed. <i class="fas fa-external-link-alt"></i></a></div>',
-        customClass: {
-          container: 'dark-backdrop',
-        },
+    this.$swal.fire({
+      html: '<h4 class="text-center p-2"><svg class="menu-icon" fill="currentColor" viewBox="0 0 346.26 368.59" style="height: 1.1em;margin-right: 0.75em;"><use href="#svg-octoprint-tunneling" /></svg>OctoPrint Secure Tunnel</h4><div class="p-1">It may take long time for OctoPrint page to load as it is securely tunneled via The Spaghetti Detective server.</div><div class="p-1"><a target="_blank" href="https://help.thespaghettidetective.com/kb/guide/en/octoprint-tunneling-Osas3m3O3L/Steps/300026,361069,300029">Learn more about OctoPrint Tunneling\'s security and page load speed. <i class="fas fa-external-link-alt"></i></a></div>',
+      customClass: {
+        container: 'dark-backdrop',
       },
-      'octoprint-tunnel.warning')
+    },
+    'octoprint-tunnel.warning')
 
     const self = this
     const fetchUsage = () => {
@@ -99,20 +91,24 @@ export default {
 .tunnel-iframe
     width: 100%
     height: 100vh
-    background: rgb(var(--color-white))
+    background: rgb(var(--color-background))
     position: absolute
     top: 0
     left: 0
-    padding-top: 52px
-    padding-bottom: 68px
 
 .floating-panel
   position: fixed
   bottom: 15px
   right: 15px
   box-shadow: 2px 2px 10px rgba(0,0,0,.3)
-  background-color: rgb(var(--color-body-bg))
+  background-color: rgb(var(--color-surface-primary))
   padding: 10px
   max-width: 300px
   z-index: 10
+</style>
+
+<style lang="sass">
+@media (pointer:none), (pointer:coarse)
+  .swal2-popup
+    transform: scale(1.5)
 </style>

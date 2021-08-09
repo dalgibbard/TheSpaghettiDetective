@@ -10,7 +10,9 @@
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% block meta_viewport %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% endblock meta_viewport %}
   <meta name="description" content="Constantly watching your prints in the background so you don't have to.">
   <meta name="author" content="">
 
@@ -44,7 +46,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32x32.png' %}">
   <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon-16x16.png' %}">
   <link rel="manifest" href="{% static 'site.webmanifest' %}">
-  <link rel="mask-icon" href="{% static 'img/safari-pinned-tab.svg' %}" color="#5bbad5">
+  <link rel="mask-icon" href="{% static 'img/safari-pinned-tab.svg' %}" color="#9965f4">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#9965f4">
 
@@ -59,10 +61,13 @@
   {% block body_top_ext %}{% endblock body_top_ext %}
   {% block navbar %}
   {% with view_name=request.resolver_match.view_name %}
-  <nav class="navbar navbar-expand-lg bg-dark static-top" id="dynaic-navbar">
+  <nav class="navbar navbar-expand-xl bg-dark static-top" id="dynamic-navbar">
     <div class="container">
-      <a class="navbar-brand" href="/printers/"><img id="dynamic-logo"
-          src="{% static 'img/logo-inverted.png' %}" style="height: 32px;" alt="The Spaghetti Detective" /></a>
+      <a class="navbar-brand" href="/">
+        <svg viewBox="0 0 1965 240" width="232" height="28.34">
+          <use href="#svg-navbar-brand" />
+        </svg>
+      </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
         aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -89,7 +94,7 @@
           {% endif %}
           {% block nav_item_pricing %}{% endblock nav_item_pricing %}
           <li class="nav-item">
-            <a class="nav-link" href="https://help.thespaghettidetective.com/">Help</a>
+            <a class="nav-link" href="https://www.thespaghettidetective.com/help/">Help</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="https://discord.gg/hsMwGpD">Forum</a>
@@ -133,11 +138,21 @@
     </div>
     <!-- /.content-wrapper -->
   </main>
+
+  <!-- SVG Sprite -->
+  <div id="svg-sprite">
+    <svg-sprite></svg-sprite>
+  </div>
+
+  {% bundle 'common' %}
+
+  {% block footer %}
   <footer>
     <div class="container">
       <p>&copy; The Spaghetti Detective {% now "Y" %}. All Rights Reserved.</p>
     </div>
   </footer>
+  {% endblock footer %}
 
   <!-- Dark / Light theme -->
   <script type="text/javascript" src="{% static 'js/theme.js' %}"></script>

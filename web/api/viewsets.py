@@ -19,6 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 import requests
 from ipware import get_client_ip
 
+from .utils import report_validationerror
 from .authentication import CsrfExemptSessionAuthentication
 from app.models import (
     User, Print, Printer, GCodeFile, PrintShotFeedback, PrinterPrediction, MobileDevice, OneTimeVerificationCode,
@@ -333,19 +334,22 @@ class MobileDeviceViewSet(viewsets.ModelViewSet):
 class OneTimeVerificationCodeViewSet(mixins.ListModelMixin,
                                      mixins.RetrieveModelMixin,
                                      viewsets.GenericViewSet):
-    throttle_classes = [AnonRateThrottle]
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (CsrfExemptSessionAuthentication,)
     serializer_class = OneTimeVerificationCodeSerializer
 
     def list(self, request, *args, **kwargs):
-        if not request.user or not request.user.is_authenticated:
-            raise Http404("Requested resource does not exist")
-
         printer_id_to_link = request.GET.get('printer_id')
         if printer_id_to_link:
-            code = OneTimeVerificationCode.objects.select_related('printer').filter(printer_id=printer_id_to_link, user=request.user).first()
+            code = OneTimeVerificationCode.objects.select_related('printer').filter(
+                printer_id=printer_id_to_link,
+                user=request.user
+            ).first()
         else:
-            code = OneTimeVerificationCode.objects.select_related('printer').filter(user=request.user).first()
+            code = OneTimeVerificationCode.objects.select_related('printer').filter(
+                printer__isnull=True,
+                user=request.user
+            ).first()
 
         if not code:
             seed()
@@ -359,36 +363,10 @@ class OneTimeVerificationCodeViewSet(mixins.ListModelMixin,
         return Response(self.serializer_class(code, many=False).data)
 
     def retrieve(self, request, *args, **kwargs):
-        if not request.user or not request.user.is_authenticated:
-            raise Http404("Requested resource does not exist")
-
         code = get_object_or_404(
             OneTimeVerificationCode.with_expired.select_related('printer').filter(user=request.user),
             pk=kwargs["pk"])
         return Response(self.serializer_class(code, many=False).data)
-
-    @action(detail=False, methods=['get'])
-    def verify(self, request, *args, **kwargs):
-        code = OneTimeVerificationCode.objects.filter(code=request.GET.get('code')).first()
-
-        if code:
-            if not code.printer:
-                printer = Printer.objects.create(
-                    name="My Awesome Cloud Printer",
-                    user=code.user,
-                    auth_token=hexlify(os.urandom(10)).decode())
-                code.printer = printer
-            else:
-                # Reset the auth_token for security reason
-                code.printer.auth_token = hexlify(os.urandom(10)).decode()
-                code.printer.save()
-
-            code.expired_at = timezone.now()
-            code.verified_at = timezone.now()
-            code.save()
-            return Response(self.serializer_class(code, many=False).data)
-        else:
-            raise Http404("Requested resource does not exist")
 
 
 class SharedResourceViewSet(mixins.ListModelMixin,
@@ -404,7 +382,8 @@ class SharedResourceViewSet(mixins.ListModelMixin,
 
     def create(self, request):
         printer = get_printer_or_404(request.GET.get('printer_id'), request)
-        SharedResource.objects.create(printer=printer, share_token=hexlify(os.urandom(18)).decode())
+        # When the GET API is slow, the user may try to turn on the sharing toggle when it's on already
+        SharedResource.objects.get_or_create(printer=printer, defaults={'share_token': hexlify(os.urandom(18)).decode()})
         return self.response_from_printer(request)
 
     def destroy(self, request, pk):
@@ -432,8 +411,7 @@ class PrinterDiscoveryViewSet(viewsets.ViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    @action(detail=False, methods=['get'])
-    def query(self, request):
+    def list(self, request):
         client_ip, is_routable = get_client_ip(request)
 
         # must guard against possible None or blank value as client_ip
@@ -441,21 +419,21 @@ class PrinterDiscoveryViewSet(viewsets.ViewSet):
             raise ImproperlyConfigured("cannot determine client_ip")
 
         devices = get_active_devices_for_client_ip(client_ip)
-        return Response({"devices": [device.asdict() for device in devices]})
+        return Response([device.asdict() for device in devices])
 
-    @action(detail=False, methods=['post'])
-    def push_verify_code_task(self, request):
+    @report_validationerror
+    def create(self, request):
         client_ip, is_routable = get_client_ip(request)
 
         # must guard against possible None or blank value as client_ip
         if not client_ip:
             raise ImproperlyConfigured("cannot determine client_ip")
 
-        code = self.request.query_params.get('code')
+        code = self.request.data.get('code')
         if code is None:
             raise ValidationError({'code': "missing param"})
 
-        device_id = self.request.query_params.get('device_id')
+        device_id = self.request.data.get('device_id')
         if device_id is None:
             raise ValidationError({'device_id': "missing param"})
 
@@ -463,26 +441,6 @@ class PrinterDiscoveryViewSet(viewsets.ViewSet):
             client_ip,
             device_id,
             DeviceMessage.from_dict({'device_id': device_id, 'type': 'verify_code', 'data': {'code': code}})
-        )
-
-        return Response({'queued': True})
-
-    @action(detail=False, methods=['post'])
-    def push_identify_task(self, request):
-        client_ip, is_routable = get_client_ip(request)
-
-        # must guard against possible None or blank value as client_ip
-        if not client_ip:
-            raise ImproperlyConfigured("cannot determine client_ip")
-
-        device_id = self.request.query_params.get('device_id')
-        if device_id is None:
-            raise ValidationError({'device_id': "missing param"})
-
-        push_message_for_device(
-            client_ip,
-            device_id,
-            DeviceMessage.from_dict({'device_id': device_id, 'type': 'identify', 'data': {}})
         )
 
         return Response({'queued': True})
