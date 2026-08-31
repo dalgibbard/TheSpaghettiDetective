@@ -7,8 +7,8 @@
 # CPU execution provider when GPU initialization is unavailable.
 #
 # The image is amd64-only. Intel's graphics packages are installed from the
-# Intel graphics repository because Ubuntu 20.04's stock packages are too old
-# for current Intel integrated and Arc GPUs.
+# Intel GPU repository because the base distribution's stock packages are too
+# old for current Intel integrated and Arc GPUs.
 FROM python:3.9-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,13 +17,13 @@ RUN apt-get update \
     && apt-get install --no-install-recommends --assume-yes \
         ca-certificates curl gnupg patchelf wget \
         libgomp1 libglib2.0-0 ocl-icd-libopencl1 \
-    && curl -fsSL https://repositories.intel.com/graphics/intel-graphics.key \
+    && curl -fsSL https://repositories.intel.com/gpu/intel-graphics.key \
         | gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg \
-    && echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/ubuntu focal-legacy main' \
+    && echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client' \
         > /etc/apt/sources.list.d/intel-gpu.list \
     && apt-get update \
     && apt-get install --no-install-recommends --assume-yes \
-        intel-opencl-icd intel-level-zero-gpu level-zero \
+        intel-opencl-icd intel-level-zero-gpu \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
