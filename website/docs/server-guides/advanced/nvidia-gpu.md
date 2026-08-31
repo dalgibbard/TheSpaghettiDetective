@@ -93,6 +93,7 @@ ML algorithms can be executed with different hardware and software options:
 
 * x86_64 with CPU hardware without GPU, with `Darknet` or `ONNX` runtime.
 * x86_64 with GPU (CUDA), with `Darknet` or `ONNX` runtime.
+* x86_64 with Intel GPU (OpenVINO), with the [Intel GPU guide](intel-gpu.md).
 * ARM with GPU (CUDA), i.e. `Nvidia Jetson` devices with `Darknet` or `ONNX` runtime.
 * ARM without a GPU. The Helm chart's CPU image runs `ONNX` there; on Docker Compose the arm64 base carries darknet, which is tried first.
 * Rockchip RK3588 boards, with the `RKNN` runtime on the NPU.
