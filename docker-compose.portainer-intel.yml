@@ -52,6 +52,10 @@ services:
       ML_API_OPENVINO_DEVICE: GPU
     devices:
       - /dev/dri:/dev/dri
+    # Keep the render-node group available if the image is later run as a
+    # non-root user. TrueNAS commonly uses GID 107 for the render group.
+    group_add:
+      - '${INTEL_RENDER_GROUP-107}'
     tty: true
     command: bash -c "gunicorn --bind 0.0.0.0:3333 --workers 1 --timeout 120 wsgi"
     healthcheck:
