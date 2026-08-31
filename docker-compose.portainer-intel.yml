@@ -42,7 +42,7 @@ x-web-environment: &web-environment
 
 services:
   ml_api:
-    image: dalgibbard/obico-ml-api:intel-b4415731
+    image: dalgibbard/obico-ml-api:intel-b514bbb4
     hostname: ml_api
     restart: unless-stopped
     environment:
@@ -62,7 +62,7 @@ services:
       retries: 3
 
   web:
-    image: dalgibbard/obico-web:intel-b4415731
+    image: dalgibbard/obico-web:intel-b514bbb4
     hostname: web
     restart: unless-stopped
     volumes:
@@ -83,7 +83,7 @@ services:
       retries: 3
 
   tasks:
-    image: dalgibbard/obico-web:intel-b4415731
+    image: dalgibbard/obico-web:intel-b514bbb4
     hostname: tasks
     restart: unless-stopped
     volumes:
