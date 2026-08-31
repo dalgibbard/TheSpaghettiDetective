@@ -42,7 +42,7 @@ x-web-environment: &web-environment
 
 services:
   ml_api:
-    image: dalgibbard/obico-ml-api:intel-b514bbb4
+    image: dalgibbard/obico-ml-api:intel-4e252f33
     hostname: ml_api
     restart: unless-stopped
     environment:
