@@ -9,13 +9,13 @@ GPU. The Intel image currently targets amd64 hosts.
 
 ## Host requirements
 
-Install a supported Intel graphics driver on the host. For Intel Arc, use a
-recent Linux kernel; OpenVINO recommends kernel 6.2 or newer for Arc GPUs.
-Install the OpenCL and Level Zero runtime packages and ensure the account that
-runs Docker can access the render device:
+Install a supported Intel graphics kernel driver and firmware on the host. For
+Intel Arc, use a recent Linux kernel; OpenVINO recommends kernel 6.2 or newer
+for Arc GPUs. The supplied container installs the OpenCL and Level Zero
+user-space runtime, so those packages do not need to be installed on the host.
+Ensure the account that runs Docker can access the render device:
 
 ```bash
-sudo apt-get install ocl-icd-libopencl1 intel-opencl-icd intel-level-zero-gpu level-zero
 sudo usermod -aG render "$USER"
 ```
 
