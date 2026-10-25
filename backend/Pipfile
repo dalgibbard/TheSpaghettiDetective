@@ -23,7 +23,7 @@ authy = "*"
 phonenumbers = "*"
 twilio = "*"
 django-safedelete = "*"
-pillow = "==13.0.0"
+pillow = "==12.3.0"
 django-hijack = "*"
 whitenoise = {extras = ["brotli"], version = "*"}
 celery = {extras = ["redis"], version = "*"}
