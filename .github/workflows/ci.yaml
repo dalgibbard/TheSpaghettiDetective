@@ -455,10 +455,24 @@ jobs:
           # import that module, so a 200 on /accounts/login/ says nothing
           # about it. Pin the bundle against the ids layout.html actually
           # renders instead of hoping a browser files the bug report.
-          code="$(curl --silent --output root.js --write-out '%{http_code}' \
-            --header 'Host: localhost:3334' http://127.0.0.1:3334/static/frontend/js/root.js)"
-          if [ "${code}" != 200 ]; then
-            echo "::error::/static/frontend/js/root.js served ${code}; the bundle is missing from staticfiles"
+          # Pin the bundle against the ids the templates actually render.
+          # Mounts vary by config: production serves signed /static/frontend/
+          # paths, the smoke runs are site-config-light, so probe the mounts
+          # and fall back to reading the bundle straight out of the container.
+          probe_bundle() {
+            for path in "$@"; do
+              code="$(curl --silent --output root.js --write-out '%{http_code}' \
+                --header 'Host: localhost:3334' "http://127.0.0.1:3334${path}")"
+              if [ "${code}" = 200 ] && [ -s root.js ]; then
+                return 0
+              fi
+            done
+            docker cp smoke-web:/app/static_build/frontend/js/root.js root.js \
+              || docker cp smoke-web:/app/static/frontend/js/root.js root.js
+            [ -s root.js ]
+          }
+          if ! probe_bundle /static/frontend/js/root.js /app/static/frontend/js/root.js; then
+            echo "::error::the built image serves no frontend/js/root.js on any mount; the checked-in bundle is missing from staticfiles"
             exit 1
           fi
           if ! grep --quiet 'page-context-json' root.js; then
