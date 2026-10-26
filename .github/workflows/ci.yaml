@@ -447,6 +447,24 @@ jobs:
             echo "::error::the server logged a staticfiles manifest error while serving the login page"
             exit 1
           fi
+          # The bundle is checked in under frontend/builds, and a stale one
+          # broke every authenticated page in production with an invisible
+          # blank render: its page-context module read '#app-platform-json',
+          # an id no current template emits, so sections.js threw at import
+          # and <printer-list-page> was never upgraded. A login page does not
+          # import that module, so a 200 on /accounts/login/ says nothing
+          # about it. Pin the bundle against the ids layout.html actually
+          # renders instead of hoping a browser files the bug report.
+          code="$(curl --silent --output root.js --write-out '%{http_code}' \
+            --header 'Host: localhost:3334' http://127.0.0.1:3334/static/frontend/js/root.js)"
+          if [ "${code}" != 200 ]; then
+            echo "::error::/static/frontend/js/root.js served ${code}; the bundle is missing from staticfiles"
+            exit 1
+          fi
+          if ! grep --quiet 'page-context-json' root.js; then
+            echo "::error::the served bundle does not read '#page-context-json'; it is a stale build that will render authenticated pages blank"
+            exit 1
+          fi
 
       # --timeout for the same reason the CUDA leg carries it: server.py loads
       # the model at import, so it happens inside worker boot, and gunicorn's
