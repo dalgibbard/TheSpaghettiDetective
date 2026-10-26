@@ -9,7 +9,7 @@
 # The image is amd64-only. Intel's graphics packages are installed from the
 # Intel GPU repository because the base distribution's stock packages are too
 # old for current Intel integrated and Arc GPUs.
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -32,15 +32,15 @@ WORKDIR /app
 # The host still needs a supported Intel kernel driver and /dev/dri must be
 # passed into the container at runtime; those are not portable image layers.
 COPY requirements.txt /app/
-# The OpenVINO 1.19.0 wheel marks its Python extension executable-stack.
+# The OpenVINO EP wheel marks its Python extension executable-stack.
 # Docker's default runtime rejects that request, so clear the ELF flag in the
 # image after installation. This does not change executable code or grant the
 # container any additional device access.
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
     && python3 -m pip install --no-cache-dir \
-        onnxruntime-openvino==1.19.0 \
+        onnxruntime-openvino==1.24.1 \
         opencv-python-headless==4.12.0.88 \
-    && find /usr/local/lib/python3.9/site-packages/onnxruntime \
+    && find /usr/local/lib/python3.12/site-packages/onnxruntime \
         -type f -name '*.so*' -exec patchelf --clear-execstack {} + \
     && python3 -m pip install --no-cache-dir --requirement requirements.txt
 
