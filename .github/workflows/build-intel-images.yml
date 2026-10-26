@@ -32,7 +32,81 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The same staging the images job in ci.yaml does, and the reason this
+      # workflow ever produced a web image that 500s once deployed: the web
+      # templates' {% static %} tags reference vendor assets collected from
+      # the sibling frontend/, which is not inside backend/. A web image
+      # built straight from backend/ passes collectstatic with those files
+      # simply absent, and the manifest error only surfaces when a page is
+      # rendered — every build step below passes on such an image.
+      - name: Move the frontend into the web build context
+        if: matrix.image == 'obico-web'
+        run: sh .github/scripts/stage_frontend.sh
+
       - uses: docker/setup-buildx-action@v3
+
+      # The push below publishes for two architectures, and a local container
+      # can only load one, so the smoke builds amd64-only first and the push
+      # reuses the same layers through the action cache. It runs before the
+      # push on purpose: intel-latest is what the deployment pulls, and a
+      # publish that is red after the fact leaves the broken tag live.
+      - name: Build the image for the smoke test
+        if: matrix.image == 'obico-web'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          push: false
+          load: true
+          platforms: linux/amd64
+          tags: smoke/${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Serve the login page before publishing
+        if: matrix.image == 'obico-web'
+        run: |
+          set -euo pipefail
+          docker pull --quiet redis:7.2-alpine
+          docker network create smoke
+          docker run --detach --network smoke --name smoke-redis redis:7.2-alpine
+          docker run --detach --network smoke --name smoke-web \
+            --publish 3334:3334 \
+            --env DJANGO_DEBUG=false \
+            --env DJANGO_SECRET_KEY=intel-smoke-not-a-real-secret-0123456789 \
+            --env SOCIAL_LOGIN=true \
+            --env REDIS_URL=redis://smoke-redis:6379 \
+            --env DATABASE_URL=sqlite:////tmp/obico-smoke.sqlite3 \
+            smoke/${{ matrix.image }}:latest sh -c 'python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 3334 config.routing:application'
+          ready=0
+          for _ in $(seq 1 45); do
+            if curl --silent --fail --output /dev/null http://127.0.0.1:3334/hc/; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "${ready}" != 1 ]; then
+            echo "::error::the web image never served /hc/ — migrate or daphne did not come up"
+            docker logs --tail 80 smoke-web || true
+            exit 1
+          fi
+          # Host is pinned because site resolution keys off it (the shipped
+          # data migration names localhost:3334); bare 127.0.0.1 matches no
+          # Site row.
+          code="$(curl --silent --output login.html --write-out '%{http_code}' \
+            --header 'Host: localhost:3334' http://127.0.0.1:3334/accounts/login/)"
+          if [ "${code}" != 200 ]; then
+            echo "::error::/account/login/ served ${code}; a 500 here is a manifest or template failure at render time"
+            tail --lines 40 login.html || true
+            docker logs --tail 80 smoke-web || true
+            exit 1
+          fi
+          grep --quiet csrfmiddlewaretoken login.html
+          if docker logs smoke-web 2>&1 | grep --quiet 'Missing staticfiles manifest entry'; then
+            echo "::error::the server logged a staticfiles manifest error while serving the login page"
+            exit 1
+          fi
 
       - name: Docker Hub login
         uses: docker/login-action@v3

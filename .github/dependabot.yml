@@ -3,8 +3,9 @@
 # merges to master trigger build-intel-images.yaml, which publishes images.
 version: 2
 updates:
-  # Backend is pinned to the Django 4.0 branch upstream chose: majors
-  # (Django 5, Pillow 13) are left as manual PRs; minor/patch arrive grouped.
+  # Backend runs the fork's Django 5.2 / Pillow 13 major (manual PR).
+  # The next majors (Django 6, Python 3.13) are left as manual PRs;
+  # minor/patch arrive grouped.
   - package-ecosystem: pip
     directory: "/backend"
     schedule:
@@ -45,7 +46,8 @@ updates:
         update-types: ["minor", "patch"]
 
   # Base-image FROM lines (backend/Dockerfile[.base], ml_api/Dockerfile[.intel]).
-  # Watch python majors against Django 4.0 support windows before merging.
+  # Watch python majors against the Django 5.2 / Pillow 13 support windows
+  # before merging.
   - package-ecosystem: docker
     directories: ["/backend", "/ml_api"]
     schedule:
