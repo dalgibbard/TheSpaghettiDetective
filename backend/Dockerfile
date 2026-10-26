@@ -16,7 +16,6 @@ RUN apk add --virtual .build-deps g++ musl-dev postgresql-dev zlib-dev jpeg-dev 
 RUN git clone https://github.com/Arksine/moonraker.git /moonraker
 RUN git -C /moonraker checkout f735c0419444848b59342a98ad3532eef123ea46
 ENV PYTHONPATH="${PYTHONPATH}:/moonraker"
-RUN pip install --no-cache-dir importlib_metadata==8.2.0 # dependencies needed by moonraker file_metadata
 
 # Requirements before the source, so editing code does not reinstall the
 # dependencies — the same ordering the ml_api images use, and it now costs
