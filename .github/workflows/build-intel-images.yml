@@ -77,7 +77,7 @@ jobs:
             --env SOCIAL_LOGIN=true \
             --env REDIS_URL=redis://smoke-redis:6379 \
             --env DATABASE_URL=sqlite:////tmp/obico-smoke.sqlite3 \
-            smoke/${{ matrix.image }}:latest sh -c 'python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 3334 config.routing:application'
+            smoke/${{ matrix.image }}:latest sh -c 'python manage.py collectstatic --noinput && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 3334 config.routing:application'
           ready=0
           for _ in $(seq 1 45); do
             if curl --silent --fail --output /dev/null http://127.0.0.1:3334/hc/; then
