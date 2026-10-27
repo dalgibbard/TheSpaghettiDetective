@@ -401,7 +401,13 @@ WEBPACK_LOADER = {
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_build')
 if not WEBPACK_LOADER_ENABLED:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Django 5.1+ ignores the old STATICFILES_STORAGE setting; the storage backend
+    # must be selected through STORAGES or whitenoise silently runs without the
+    # manifest (no hashed filenames) and without brotli/gzip precompression.
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    }
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, '../frontend/static'),
     os.path.join(BASE_DIR, '../frontend/builds'),
