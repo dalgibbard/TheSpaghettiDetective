@@ -6,6 +6,12 @@ use the CUDA base. It is selected by `docker-compose.intel.yml`; see the
 [Intel GPU guide](../website/docs/server-guides/advanced/intel-gpu.md) for the
 host driver and `/dev/dri` requirements.
 
+The AMD GPU image (experimental) is likewise self-contained: it starts from
+AMD's `rocm/dev-ubuntu-24.04` image and installs the ROCm-pinned
+`onnxruntime_migraphx` wheel. It is built from `ml_api/Dockerfile.amd` by
+`build-amd-images.yml` and selected by `docker-compose.amd.yml`; see the
+[AMD GPU guide](../website/docs/server-guides/advanced/amd-gpu.md).
+
 To build them, use the provided [build_base_images.sh](../ml_api/scripts/build_base_images.sh) script.
 It executes `docker` to build images, assign them tags and push into docker registry.
 Script should be run from `ml_api` directory;

@@ -24,7 +24,7 @@ If it has at least 4gb of RAM, it should run fine.
 Component | Requirement
 :---|:---
 CPU | One that can run a modern OS. CPU's as old as 4th Gen Intel have been able to run Obico just fine.
-GPU | Optional. NVIDIA CUDA and Intel OpenVINO acceleration are supported on Linux hosts; see the GPU guides below.
+GPU | Optional. NVIDIA CUDA and Intel OpenVINO acceleration are supported on Linux hosts; AMD MIGraphX acceleration is available as an experimental image (see the GPU guides below).
 RAM | You should have at least 4gb of DDR3 ram, but the more the better.
 OS | Either Windows, Linux, or MacOS X will work. The OS version should be recent enough to run Docker. For older devices, Linux is **highly** recommended.
 RGB | Highly recommended. The more your PC looks like a christmas tree, the more FPS you will have (sarcasm)
@@ -35,5 +35,9 @@ GPU acceleration is optional. CPU inference works on all supported platforms, wh
 
 - [NVIDIA GPU with CUDA](advanced/nvidia-gpu.md)
 - [Intel GPU with OpenVINO](advanced/intel-gpu.md)
+- [AMD GPU with MIGraphX (experimental)](advanced/amd-gpu.md)
 
-AMD GPU acceleration is not currently included in the Docker Compose images. ROCm support varies by GPU model, operating system, and runtime version; an AMD/MIGraphX image can be added separately once it has been validated.
+AMD GPU acceleration is experimental: the AMD/MIGraphX image is built from
+`ml_api/Dockerfile.amd` on this fork and validated on ROCm-capable hardware.
+ROCm support varies by GPU model, so check the AMD guide's compatibility notes
+before relying on it.

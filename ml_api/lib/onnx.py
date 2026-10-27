@@ -13,15 +13,20 @@ class OnnxNet:
     def __init__(self, onnx_path: str, meta_path: str, use_gpu: bool):
         gpu_provider = None
         if use_gpu:
-            # CUDA is the historical default for the GPU image. The Intel
-            # image selects OpenVINO through the same small interface, which
-            # keeps the model loader and its CPU fallback hardware-agnostic.
+            # CUDA is the historical default for the GPU image. The Intel and
+            # AMD images select OpenVINO / MIGraphX through the same small
+            # interface, which keeps the model loader and its CPU fallback
+            # hardware-agnostic.
             gpu_provider = os.environ.get('ML_API_GPU_PROVIDER', 'CUDAExecutionProvider')
             providers = [gpu_provider, 'CPUExecutionProvider']
             provider_options = [{}]
             if gpu_provider == 'OpenVINOExecutionProvider':
                 provider_options[0] = {
                     'device_type': os.environ.get('ML_API_OPENVINO_DEVICE', 'GPU'),
+                }
+            elif gpu_provider == 'MIGraphXExecutionProvider':
+                provider_options[0] = {
+                    'device_id': int(os.environ.get('ML_API_MIGRAPHX_DEVICE_ID', '0')),
                 }
             provider_options.append({})
         else:

@@ -26,8 +26,10 @@ For GPU acceleration on a Linux host, follow the guide for your hardware before 
 
 - [NVIDIA GPU with CUDA](advanced/nvidia-gpu.md)
 - [Intel GPU with OpenVINO](advanced/intel-gpu.md)
+- [AMD GPU with MIGraphX (experimental)](advanced/amd-gpu.md)
 
-AMD GPU acceleration is not currently included in the supplied images.
+AMD GPU acceleration is experimental on this fork; see the AMD guide for the
+additional Compose file and image.
 
 :::caution
 

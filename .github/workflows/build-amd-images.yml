@@ -1,0 +1,84 @@
+name: build-amd-images
+
+on:
+  push:
+    branches: [master, feature/amd-migraphx]
+    tags: ["v*"]
+    paths-ignore:
+      - "docs/**"
+      - "website/**"
+      - "**.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-amd-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: obico-ml-api
+            context: ml_api
+            dockerfile: Dockerfile.amd
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # The ROCm base image carries the MIGraphX libraries, so the wheel
+      # imports on a GPU-less CI runner; the provider-selection tests are
+      # mocked and never need real hardware. Build amd64-only first, run the
+      # tests inside the image, and only then publish.
+      - name: Build the image for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          push: false
+          load: true
+          platforms: linux/amd64
+          tags: smoke/${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run the ML API tests inside the image
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint sh smoke/${{ matrix.image }}:latest -c \
+            'pip install --no-cache-dir pytest && python -m pytest test_onnx_provider.py test_server_retry.py -q'
+          docker run --rm --entrypoint python smoke/${{ matrix.image }}:latest -c \
+            'import onnxruntime; print("available providers:", onnxruntime.get_available_providers())'
+
+      - name: Docker Hub login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: dalgibbard/${{ matrix.image }}
+          tags: |
+            type=sha,format=short,prefix=amd-
+            type=semver,pattern={{version}},prefix=amd-
+            type=raw,value=amd-latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
