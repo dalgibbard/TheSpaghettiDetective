@@ -324,7 +324,14 @@ jobs:
 
       - name: Run the backend test suite
         working-directory: backend
-        run: python manage.py test --verbosity 2
+        run: |
+          # Manifest staticfiles storage (STORAGES["staticfiles"]) looks entries up
+          # in the manifest built by collectstatic; without it, rendering an auth
+          # error page during the google-provider tests raises
+          # "Missing staticfiles manifest entry". Production boots run collectstatic
+          # too, so the tests do the same.
+          python manage.py collectstatic --noinput
+          python manage.py test --verbosity 2
 
   # The two images most people run, on both architectures the release
   # publishes, built and exercised by the same scripts the release uses. The

@@ -59,13 +59,34 @@ Twisted = {extras = ["tls", "http2"], version = "*" }
 django-oauth-toolkit = "==3.4.1"
 requests-toolbelt = "==1.0.0"
 prompt-toolkit = "==3.0.43"
-typing-extensions = "==4.11.0"
+typing-extensions = "*"
 aiohttp = "==3.9.1"
 pydantic = "==2.8.0"
 pydantic-core = "==2.20.0"
 django-slick-reporting = "*"
 django-crispy-forms = "*"
 crispy-bootstrap4 = "*"
+# The jusprin app (langfuse/openai/instructor) and the Google Calendar
+# integration (google-api-python-client) were previously declared only in
+# requirements.txt, which is pipenv-generated; they belong in the Pipfile so
+# the lock and the export stay in sync.
+langfuse = "==4.15.4"
+# cryptography/jwcrypto must stay at the versions the app is verified against;
+# newer releases change the JWKS/JWT verification behaviour the google-provider
+# tests (and login flow) depend on.
+cryptography = "==44.0.0"
+jwcrypto = "==1.5.6"
+openai = "==1.57.2"
+instructor = "==1.5.1"
+google-api-python-client = "==2.159.0"
+google-auth = "==2.37.0"
+google-auth-httplib2 = "==0.2.0"
+setuptools = "==75.8.0"
+# moonraker is shipped on PYTHONPATH (not pip-installed) in the web image and
+# in CI, and its file_manager imports this importlib.metadata backport
+# directly; the old hand-built web:base image provided it, so it must be
+# declared now that the web image is self-contained.
+importlib-metadata = "==8.2.0"
 
 [dev-packages]
 
