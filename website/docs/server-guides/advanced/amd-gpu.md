@@ -3,11 +3,19 @@ title: Running Obico Server with AMD GPU acceleration (experimental)
 ---
 
 :::info
-Experimental. This guide applies to Linux hosts with an AMD GPU that ROCm
-supports — Radeon RX 6000/7000 series cards and AMD APUs such as the Ryzen
-5000G/6000G series iGPU (gfx1030). The AMD image currently targets amd64
-hosts. AMD support was validated against the ROCm 7.2 compatibility matrix;
-check your exact GPU model there before relying on it.
+Experimental. This guide applies to Linux hosts with an AMD GPU that the
+**ROCm 7.2** stack supports — Radeon RX 6000 (gfx1030), RX 7000 (gfx1100 /
+gfx1101 / gfx1102) and RX 9000 (gfx1200 / gfx1201) dGPUs, Radeon PRO cards,
+AMD Instinct accelerators, and the Ryzen AI Max 300 / selected Ryzen AI
+300 & 400 series APUs. The AMD image currently targets amd64 hosts.
+
+**Not supported: Ryzen 4000G/5000G iGPUs** (Renoir/Lucienne/Cezanne, which
+report as `gfx90c`). ROCm 7.x dropped compute kernels for that architecture;
+field-tested on a Ryzen 5700G, the ML container aborts with
+`rocBLAS error: Cannot read TensileLibrary.dat: Illegal seek for GPU arch :
+gfx90c` and then crashes. Use the standard CPU image on those systems. Check
+your exact GPU model in the [ROCm compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
+before enabling AMD acceleration.
 :::
 
 ## Why a separate image
@@ -81,12 +89,28 @@ ONNX Runtime execution providers: ['MIGraphXExecutionProvider', 'CPUExecutionPro
 Succeeded!
 ```
 
-If the MIGraphX provider cannot initialize on your GPU, the loader retries
-the same ONNX model with `CPUExecutionProvider`, so the server stays usable —
-just slower. Check `/dev/kfd`, `iommu=pt`, and the ROCm compatibility matrix
-for your GPU model in that case.
+If the MIGraphX provider initializes but your GPU is not in the ROCm 7.2
+kernel list, the provider can abort the process instead of falling back
+(that is exactly what happens on `gfx90c` Renoir/Cezanne iGPUs), so
+**verify your GPU first** with a throwaway probe before switching your ML
+service over:
 
-A host with no ROCm-capable GPU can still run this image: the wheel contains
+```bash
+docker run --rm --device /dev/kfd --device /dev/dri \
+  dalgibbard/obico-ml-api:amd-latest python -u -c "
+import onnxruntime as o
+s = o.InferenceSession('/model_cache/ml_api/onnx/model-weights.onnx',
+    providers=[('MIGraphXExecutionProvider', {'device_id': '0'}), 'CPUExecutionProvider'])
+print('assigned providers:', s.get_providers())
+"
+```
+
+A supported GPU prints `assigned providers: ['MIGraphXExecutionProvider', ...]`
+and exits 0. A crash means your GPU is not supported by the current ROCm
+release — stay on the CPU image.
+
+A host with a ROCm-supported GPU architecture but no usable device (e.g. no
+`/dev/kfd` passed through) can still run this image: the wheel contains
 a full CPU-capable ONNX Runtime, so leaving `ML_API_GPU_PROVIDER` unset (or
 setting it to `CPUExecutionProvider`) works too.
 
