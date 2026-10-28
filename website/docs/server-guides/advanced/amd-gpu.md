@@ -10,11 +10,17 @@ AMD Instinct accelerators, and the Ryzen AI Max 300 / selected Ryzen AI
 300 & 400 series APUs. The AMD image currently targets amd64 hosts.
 
 **Not supported: Ryzen 4000G/5000G iGPUs** (Renoir/Lucienne/Cezanne, which
-report as `gfx90c`). ROCm 7.x dropped compute kernels for that architecture;
-field-tested on a Ryzen 5700G, the ML container aborts with
+report as `gfx90c`). ROCm 6.x and 7.x no longer ship compute kernels for that
+architecture: its rocBLAS kernel sets cover `gfx908`, `gfx90a`, `gfx942` and
+RDNA2+ only. Field-tested on a Ryzen 5700G, the ML container aborts with
 `rocBLAS error: Cannot read TensileLibrary.dat: Illegal seek for GPU arch :
-gfx90c` and then crashes. Use the standard CPU image on those systems. Check
-your exact GPU model in the [ROCm compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
+gfx90c` and then crashes. The older, deprecated ROCm execution provider was
+also tested (ONNX Runtime 1.21 on ROCm 6.4.4): it loads and even assigns the
+provider, but inference hits the same missing-kernels wall — forcing the
+`gfx908` kernel set via `HSA_OVERRIDE_GFX_VERSION=9.0.8` ends in
+`HSA_STATUS_ERROR_ILLEGAL_INSTRUCTION` because those CDNA kernels cannot run
+on the iGPU's Vega hardware. Use the standard CPU image on those systems.
+Check your exact GPU model in the [ROCm compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
 before enabling AMD acceleration.
 :::
 
@@ -30,6 +36,13 @@ which AMD publishes as a wheel per ROCm release. The image starts from AMD's
 official `rocm/dev-ubuntu-24.04` image (Ubuntu 24.04 + AMD's signed apt
 sources + the HIP runtime) and installs the `migraphx` packages and the
 matching `onnxruntime_migraphx` wheel from the pinned ROCm 7.2.1 repository.
+
+AMD's older, deprecated ROCm execution provider (last shipped as the
+`onnxruntime_rocm` wheels, up to ONNX Runtime 1.21 / ROCm 6.4.4) is not kept
+as a separate "legacy" image: it predates MIGraphX support for current
+Radeon cards and still depends on rocBLAS, so it shares the same architecture
+kernel coverage. A legacy-stack image would add build matrix and maintenance
+without unlocking any GPU that the current image cannot already run on.
 
 ## Host requirements
 
