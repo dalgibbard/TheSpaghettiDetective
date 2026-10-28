@@ -957,6 +957,17 @@ export default {
       const direction =
         this.sortingValue.direction && this.sortingValue.direction.key === 'asc' ? 1 : -1
       const keys = [sorting.key, sorting.folderKey].filter(Boolean)
+      const compareValues = (av, bv) => {
+        if (typeof av === 'string' && typeof bv === 'string') {
+          // sort names case-insensitively; plain string comparison would group
+          // all upper-case names before all lower-case ones
+          return av.localeCompare(bv, undefined, { sensitivity: 'base' })
+        }
+        if (av === bv) {
+          return 0
+        }
+        return av > bv ? 1 : -1
+      }
       return [...items].sort((a, b) => {
         for (const key of keys) {
           const av = a[key]
@@ -964,17 +975,14 @@ export default {
           if (av === undefined || bv === undefined) {
             continue
           }
-          if (av === bv) {
-            continue
+          const cmp = compareValues(av, bv)
+          if (cmp !== 0) {
+            return cmp * direction
           }
-          return av > bv ? direction : -direction
         }
         const an = a.filename || a.name || ''
         const bn = b.filename || b.name || ''
-        if (an === bn) {
-          return 0
-        }
-        return an > bn ? 1 : -1
+        return compareValues(an, bn)
       })
     },
     onSortingUpdated(sortingValue) {
