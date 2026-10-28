@@ -19,7 +19,11 @@ also tested (ONNX Runtime 1.21 on ROCm 6.4.4): it loads and even assigns the
 provider, but inference hits the same missing-kernels wall — forcing the
 `gfx908` kernel set via `HSA_OVERRIDE_GFX_VERSION=9.0.8` ends in
 `HSA_STATUS_ERROR_ILLEGAL_INSTRUCTION` because those CDNA kernels cannot run
-on the iGPU's Vega hardware. Use the standard CPU image on those systems.
+on the iGPU's Vega hardware. Use the standard CPU image on those systems —
+and it is not only a compatibility call: measured on the same Ryzen 5700G,
+the model runs in ~38 ms on 8 CPU cores (~66 ms limited to 4 cores) versus
+~201 ms through the iGPU via WebGPU, so GPU acceleration for AMD stays
+scoped to RX 6000+ / Ryzen AI Max-class hardware.
 Check your exact GPU model in the [ROCm compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
 before enabling AMD acceleration.
 :::
