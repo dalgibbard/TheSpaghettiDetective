@@ -1,0 +1,65 @@
+# Dependency update automation for the Intel fork.
+# Dependabot PRs are gated by the existing ci.yaml (same checks upstream runs);
+# merges to master trigger build-intel-images.yaml, which publishes images.
+version: 2
+updates:
+  # Backend runs the fork's Django 5.2 / Pillow 13 major (manual PR).
+  # The next majors (Django 6, Python 3.13) are left as manual PRs;
+  # minor/patch arrive grouped.
+  - package-ecosystem: pip
+    directory: "/backend"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 15
+    labels:
+      - dependencies
+    groups:
+      backend-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: pip
+    directory: "/ml_api"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 15
+    labels:
+      - dependencies
+    groups:
+      ml-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 15
+    labels:
+      - dependencies
+    groups:
+      frontend-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Base-image FROM lines (backend/Dockerfile[.base], ml_api/Dockerfile[.intel]).
+  # Watch python majors against the Django 5.2 / Pillow 13 support windows
+  # before merging.
+  - package-ecosystem: docker
+    directories: ["/backend", "/ml_api"]
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies

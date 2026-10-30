@@ -1,0 +1,12 @@
+# Needs the Release Please GitHub App installed on this repo.
+# Its release PR, once merged, tags v<semver>; build-intel-images.yaml then
+# publishes dalgibbard/obico-web:intel-<version> and obico-ml-api:intel-<version>.
+release-type: simple
+handle-release-prs: true
+bump-patch-for-minor-pre-major: true
+include-v-in-tag: true
+changelog-types:
+  - type: fix
+    heading: "Fixed"
+  - type: feat
+    heading: "Added"
